@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:fb="http://ogp.me/ns/fb#">
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link type="text/css" rel="stylesheet" href="http://code.jquery.com/ui/1.9.1/themes/smoothness/jquery-ui.css"/>
+<link type="text/css" rel="stylesheet" href="style.css"/>
+<title>TTS Asyique</title>
+</head>
+<body>
+<ul id="wordList">
+	<li data-key="1" data-answer="UIN">Nama kampus tercinta</li>
+	<li data-key="2" data-answer="informatika">Jurusan kita (teknik _________)</li>
+	<li data-key="3" data-answer="Saintek">Singkatan fakultas kita</li>
+</ul>
+
+<div id="listContainer">
+    <h3>TTS Asyique</h3>
+	<strong>Across Hint:</strong><br/>
+	<ul id="acrossList"></ul><br/><br/><br/>
+    <strong>Down Hint:</strong><br/>
+	<ul id="downList"></ul>
+</div>
+
+<div id="crossword-container">
+
+<script src="http://code.jquery.com/jquery-1.9.0.js"></script>
+<script src="http://code.jquery.com/ui/1.9.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+
+    var jml_baris = 30;
+    var jml_kolom = 30;
+
+    for (i = jml_baris; i > 0; i--) {
+        for (j = jml_kolom; j > 0; j--) {
+            $("#crossword-container").prepend("<input maxlength='1' data-row='"+i+"' data-column='"+j+"' data-crossed='0' data-letter='' data-dir='' data-across-key='0' data-down-key='0' id='row_"+i+"_col_"+j+"' type='text' value='' style='text-transform: uppercase;display:none;'/>");
+        }
+    }
+
+function markIntersection(matchedObj_row,matchedObj_col){
+	$("#row_"+(parseInt(matchedObj_row)-1)+"_col_"+(parseInt(matchedObj_col)-1)).attr("data-crossed",1);
+	$("#row_"+(parseInt(matchedObj_row)-1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	$("#row_"+(parseInt(matchedObj_row)-1)+"_col_"+(parseInt(matchedObj_col)+1)).attr("data-crossed",1);
+	$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)-1)).attr("data-crossed",1);
+	$("#row_"+(matchedObj_row)+"_col_"+(matchedObj_col)).attr("data-crossed",1);//.attr("data-dir",2);
+	$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)+1)).attr("data-crossed",1);
+	$("#row_"+(parseInt(matchedObj_row)+1)+"_col_"+(parseInt(matchedObj_col)-1)).attr("data-crossed",1);
+	$("#row_"+(parseInt(matchedObj_row)+1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	$("#row_"+(parseInt(matchedObj_row)+1)+"_col_"+(parseInt(matchedObj_col)+1)).attr("data-crossed",1);
+}
+function markTop(matchedObj_row,matchedObj_col){
+	$("#row_"+(parseInt(matchedObj_row)-1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	//$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)-1)).attr("data-crossed",1);
+	//$("#row_"+(matchedObj_row)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	//$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)+1)).attr("data-crossed",1);
+}
+function markBottom(matchedObj_row,matchedObj_col){
+	//$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)-1)).attr("data-crossed",1);
+	//$("#row_"+(matchedObj_row)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)+1)).attr("data-crossed",1);
+	$("#row_"+(parseInt(matchedObj_row)+1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+}
+function markLeft(matchedObj_row,matchedObj_col){
+	//$("#row_"+(parseInt(matchedObj_row)-1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)-1)).attr("data-crossed",1);
+	//$("#row_"+(matchedObj_row)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	//$("#row_"+(parseInt(matchedObj_row)+1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+}
+function markRight(matchedObj_row,matchedObj_col){
+	//$("#row_"+(parseInt(matchedObj_row)-1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	//$("#row_"+(matchedObj_row)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+	$("#row_"+(matchedObj_row)+"_col_"+(parseInt(matchedObj_col)+1)).attr("data-crossed",1);
+	//$("#row_"+(parseInt(matchedObj_row)+1)+"_col_"+(matchedObj_col)).attr("data-crossed",1);
+}
+
+var mylist = $("#wordList");
+var listitems = mylist.children('li').get();
+listitems.sort(function(a, b) {
+	return $(a).attr("data-answer").toUpperCase().localeCompare($(b).attr("data-answer").toUpperCase());
+}).sort(function(a, b) {
+	return $(b).attr("data-answer").length - $(a).attr("data-answer").length;
+});
+$.each(listitems, function(index, item) {
+	mylist.append(item);
+});
+
+var originalGrid = $("#crossword-container").html();
+var originalList = $("#wordList").html();
+var firstWord = true;
+var currentWord = "";
+var start_row = 0;
+var start_col = 0;
+var buffer_row = 0;
+var buffer_col = 0;
+var matchedObj;
+var matchedObj_row = 0;
+var matchedObj_col = 0;
+var dir = 1;
+var clearPath = true;
+var check_val = "";
+var resetCounter = 0;
+var lastDir = 0;
+function applyHandlers(){
+	//$("#container-loading").hide();
+	$("#crossword-container input").fadeIn(3000);
+	$("input").on("keyup",function(e){
+		var code = e.keyCode || e.which;
+		var currentRow = $(this).attr("data-row");
+		var currentColumn = $(this).attr("data-column");
+		if(code == 37){ //left
+			$(this).prevAll(":enabled:first").focus();
+		}else if(code == 38){ //up
+			currentRow--;
+			if(currentRow >= 1){
+				if($("#row_"+currentRow+"_col_"+currentColumn).is(":enabled")){
+					$("#row_"+currentRow+"_col_"+currentColumn).focus();
+				}else{
+					currentRow--;
+					$("#row_"+currentRow+"_col_"+currentColumn).focus();
+				}
+			}
+		}else if(code == 39){ //right
+			$(this).nextAll(":enabled:first").focus();
+		}else if(code == 40){ //down
+			currentRow++;
+			if(currentRow <= 30){
+				if($("#row_"+currentRow+"_col_"+currentColumn).is(":enabled")){
+					$("#row_"+currentRow+"_col_"+currentColumn).focus();
+				}else{
+					currentRow++;
+					$("#row_"+currentRow+"_col_"+currentColumn).focus();
+				}
+			}
+		}else if(code >= 48 && code <= 90){
+			checkForCompleteWord(this);
+		}
+
+	}).on("focus",function(){
+		//$(this).val($(this).attr("data-letter"));
+		if($(this).attr("data-dir")!=2){
+			lastDir = $(this).attr("data-dir");
+		}
+		$(this).val("");
+		checkForCompleteWord(this);
+	});
+	$('input:enabled:first').focus();
+	//$("input[data-dir='2']").css("background","red");
+}
+function checkForCompleteWord(Obj){
+	$("#downList li:visible").hide();
+	$("#acrossList li:visible").hide();
+	var acrossKey = $(Obj).attr("data-across-key");
+	var downKey = $(Obj).attr("data-down-key");
+	var directionPossible = $(Obj).attr("data-dir");
+	var wordComplete = true;
+	console.log("acrossKey:"+acrossKey+" downKey:"+downKey+" dir:"+directionPossible);
+	$('li[data-key="'+acrossKey+'"]').show();
+	$('li[data-key="'+downKey+'"]').show();
+
+	if(acrossKey != ""){
+		wordComplete = true;
+		var acrossWord = $('input[data-across-key="'+acrossKey+'"]');
+		$(acrossWord).each(function() {
+			if($(this).val().toUpperCase() != $(this).attr("data-letter").toUpperCase()){
+				wordComplete = false;
+				//alert("nogo");
+			}
+		});
+		if(wordComplete){
+			$(acrossWord).addClass("correct-input").prop('disabled', true);
+			$('input:enabled:first').focus();
+		}
+	}
+	if(downKey != ""){
+		wordComplete = true;
+		var downWord = $('input[data-down-key="'+downKey+'"]');
+		$(downWord).each(function() {
+			if($(this).val().toUpperCase() != $(this).attr("data-letter").toUpperCase()){
+				wordComplete = false;
+			}
+		});
+		if(wordComplete){
+			$(downWord).addClass("correct-input").prop('disabled', true);
+			$('input:enabled:first').focus();
+		}
+	}
+	 checkForCompletePuzzle();
+}
+function checkForCompletePuzzle(){
+	if($("input:enabled").length == 0){
+		if(confirm("Congratulations, you completed the puzzle!\r\nWould you like a new puzzle?")){
+			//clearAndReset();
+		}
+	}
+}
+function clearAndReset(){
+	console.log("RESET");
+	resetCounter++;
+	$("#crossword-container").html(originalGrid);
+	$("#wordList").html(originalList);
+	$("#downList").empty();
+	$("#acrossList").empty();
+	firstWord = true;
+	currentWord = "";
+	start_row = 0;
+	start_col = 0;
+	buffer_row = 0;
+	buffer_col = 0;
+	matchedObj;
+	matchedObj_row = 0;
+	matchedObj_col = 0;
+	dir = 1;
+	clearPath = true;
+	check_val = "";
+	crosswordTries = 0;
+
+	var tryTimer = setInterval(function(){
+		var words = $("#wordList li");
+		if($(words).length > 0){
+			crosswordTries++;
+			if(crosswordTries < 5){
+				buildCrossword();
+				//$("#crossword-container input[data-letter='']").addClass("unused-input").prop('disabled', true);
+			}else{
+
+				$("#crossword-container input[data-letter='']").addClass("unused-input").prop('disabled', true);
+				clearInterval(tryTimer);
+				if(resetCounter < 20){
+					clearAndReset();
+				}else{
+					//alert("Could not use all the words!");
+					applyHandlers();
+				}
+			}
+		}else{
+			clearInterval(tryTimer);
+			$("#crossword-container input[data-letter='']").addClass("unused-input").prop('disabled', true);
+			applyHandlers();
+		}
+	},10);
+}
+function buildCrossword(){
+	console.log("Building...");
+	var words = $("#wordList li");
+	$.each(words, function(){
+		if(firstWord){
+			currentWord = $(this).attr("data-answer").toUpperCase();
+			currentKey = $(this).attr("data-key");
+			currentWord_length = currentWord.length;
+			start_row = Math.floor(Math.random() * 10) + 1;
+			start_col = Math.floor(Math.random() * 8) + 3;
+			markTop(start_row+1,start_col);
+			for(i=0; i <= currentWord.length; i++){
+				start_row++;
+				$("#row_"+start_row+"_col_"+start_col).attr({
+					"data-letter":currentWord[i],
+					"data-dir":dir,
+					"data-down-key":currentKey
+				});
+			}
+			markBottom(start_row-1,start_col);
+			$(this).appendTo("#downList");
+			firstWord = false;
+		}else{
+			currentWord = $(this).attr("data-answer").toUpperCase();
+			currentKey = $(this).attr("data-key");
+			currentWord_length = currentWord.length;
+			for(i=0; i <= currentWord.length; i++){
+				if(dir == 0){
+					matchedObj = $("#crossword-container input[data-letter='"+currentWord[i]+"'][data-crossed!='1'][data-dir='1']:first");
+					if($(matchedObj).length >= 1){
+						matchedObj_row = $(matchedObj).attr("data-row");
+						matchedObj_col = $(matchedObj).attr("data-column");
+						start_row = matchedObj_row;
+						start_col = ((matchedObj_col - i)-1);
+						check_row = start_row;
+						check_col = start_col;
+						currentCell = $("#row_"+check_row+"_col_"+check_col);
+						if(currentCell.attr("data-letter") != ""){
+							clearPath = false;
+						}
+						for(j=0; j <= currentWord.length; j++){
+							check_col++;
+							currentCell = $("#row_"+check_row+"_col_"+check_col);
+							if(currentCell.attr("data-crossed") == 1){
+								clearPath = false;
+								j = currentWord.length;
+							}
+							if(currentCell.attr("data-letter") != "" && currentCell.attr("data-letter") != currentWord[j]){
+								clearPath = false;
+								j = currentWord.length;
+							}
+						}
+						if(!clearPath){
+							clearPath = true;
+							matchedObj = $("#crossword-container input[data-letter='"+currentWord[i]+"'][data-crossed!='1'][data-dir='1']:last");
+							matchedObj_row = $(matchedObj).attr("data-row");
+							matchedObj_col = $(matchedObj).attr("data-column");
+							start_row = matchedObj_row;
+							start_col = ((matchedObj_col - i)-1);
+							check_row = start_row;
+							check_col = start_col;
+							currentCell = $("#row_"+check_row+"_col_"+check_col);
+							if(currentCell.attr("data-letter") != ""){
+								clearPath = false;
+							}
+							for(j=0; j <= currentWord.length; j++){
+								check_col++;
+								currentCell = $("#row_"+check_row+"_col_"+check_col);
+								if(currentCell.attr("data-crossed") == 1){
+									clearPath = false;
+									j = currentWord.length;
+								}
+								if(currentCell.attr("data-letter") != "" && currentCell.attr("data-letter") != currentWord[j]){
+									clearPath = false;
+									j = currentWord.length;
+								}
+							}
+						}
+						if(clearPath){
+							markLeft(start_row,start_col+1);
+							for(j=0; j <= currentWord.length; j++){
+								start_col++;
+								currentCell = $("#row_"+start_row+"_col_"+start_col);
+								if(currentCell.attr("data-letter") == currentWord[j]){
+									markIntersection(start_row,start_col);
+								}
+								$(currentCell).attr({
+									"data-letter":currentWord[j],
+									"data-dir":dir,
+									"data-across-key":currentKey
+								});
+							}
+							markRight(start_row,start_col-1);
+							markIntersection(matchedObj_row,matchedObj_col);
+
+							$(this).appendTo("#acrossList");
+							//$(this).remove();
+							i = currentWord.length;
+						}
+						clearPath = true;
+					}
+				}else{
+					matchedObj = $("#crossword-container input[data-letter='"+currentWord[i]+"'][data-crossed!='1'][data-dir='0']:first");
+					if($(matchedObj).length >= 1){
+						matchedObj_row = $(matchedObj).attr("data-row");
+						matchedObj_col = $(matchedObj).attr("data-column");
+						start_col = matchedObj_col;
+						start_row = ((matchedObj_row - i)-1);
+						check_row = start_row;
+						check_col = start_col;
+						currentCell = $("#row_"+check_row+"_col_"+check_col);
+						if(currentCell.attr("data-letter") != ""){
+							clearPath = false;
+						}
+						for(j=0; j <= currentWord.length; j++){
+							check_row++;
+							currentCell = $("#row_"+check_row+"_col_"+check_col);
+							if(currentCell.attr("data-crossed") == 1){
+								clearPath = false;
+								j = currentWord.length;
+							}
+							if(currentCell.attr("data-letter") != "" && currentCell.attr("data-letter") != currentWord[j]){
+								clearPath = false;
+								j = currentWord.length;
+							}
+						}
+						if(!clearPath){
+							clearPath = true;
+							matchedObj = $("#crossword-container input[data-letter='"+currentWord[i]+"'][data-crossed!='1'][data-dir='0']:last");
+							matchedObj_row = $(matchedObj).attr("data-row");
+							matchedObj_col = $(matchedObj).attr("data-column");
+							start_col = matchedObj_col;
+							start_row = ((matchedObj_row - i)-1);
+							check_row = start_row;
+							check_col = start_col;
+							currentCell = $("#row_"+check_row+"_col_"+check_col);
+							if(currentCell.attr("data-letter") != ""){
+								clearPath = false;
+							}
+							for(j=0; j <= currentWord.length; j++){
+								check_row++;
+								currentCell = $("#row_"+check_row+"_col_"+check_col);
+								if(currentCell.attr("data-crossed") == 1){
+									clearPath = false;
+									j = currentWord.length;
+								}
+								if(currentCell.attr("data-letter") != "" && currentCell.attr("data-letter") != currentWord[j]){
+									clearPath = false;
+									j = currentWord.length;
+								}
+							}
+						}
+						if(clearPath){
+							markTop(start_row+1,start_col);
+							for(j=0; j <= currentWord.length; j++){
+								start_row++;
+								currentCell = $("#row_"+start_row+"_col_"+start_col);
+								if(currentCell.attr("data-letter") == currentWord[j]){
+									markIntersection(start_row,start_col);
+								}
+								currentCell.attr({
+									"data-letter":currentWord[j],
+									"data-dir":dir,
+									"data-down-key":currentKey
+								});
+							}
+							markBottom(start_row-1,start_col);
+							markIntersection(matchedObj_row,matchedObj_col);
+
+							$(this).appendTo("#downList");
+							//$(this).remove();
+							i = currentWord.length;
+						}
+						clearPath = true;
+					}
+				}
+			}
+
+		}
+		if(dir == 0){
+			dir = 1;
+		}else{
+			dir = 0;
+		}
+	});
+}
+var crosswordTries = 0;
+var tryTimer = setInterval(function(){
+
+	var words = $("#wordList li");
+	if($(words).length > 0){
+		crosswordTries++;
+		if(crosswordTries < 5){
+			buildCrossword();
+			//$("#crossword-container input[data-letter='']").addClass("unused-input").prop('disabled', true);
+		}else{
+			clearInterval(tryTimer);
+			$("#crossword-container input[data-letter='']").addClass("unused-input").prop('disabled', true);
+			clearAndReset();
+		}
+	}else{
+		clearInterval(tryTimer);
+		$("#crossword-container input[data-letter='']").addClass("unused-input").prop('disabled', true);
+		applyHandlers();
+	}
+},10);
+
+//buildCrossword();
+
+</script>
+    </div>
+</body>
+</html>

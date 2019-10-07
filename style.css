@@ -1,0 +1,85 @@
+	body{
+        background: black;
+		padding-top:none;
+		margin-top:none;
+	}
+	input{
+		height:25px;
+		width:25px;
+		font-size:12px;
+		text-align:center;
+		margin:0px;
+		padding:0px;
+		border-top: none;
+		border-left:none;
+		border-bottom: 1px solid #222;
+		border-right: 1px solid #222;
+
+	}
+	#crossword-container,#container-loading{
+		position:relative;
+
+		width:780px;
+		height:780px;
+
+		border:5px solid black;
+		padding:0px;
+		display:inline-block;
+		float:left;
+
+	}
+	#builderlink{
+
+		position:absolute;
+		top:790px;
+		right:0px;
+
+	}
+	#keydirections{
+
+		position:absolute;
+		top:790px;
+		left:0px;
+
+	}
+	#container-loading{display:inline-block;color:white;}
+	#wordList{display:none;}
+	#listContainer{
+		float:left;
+		font-size: 1.2em;
+		width:350px;
+		color:#FFF;
+	}
+	#downList,#acrossList{
+		display:inline-block;
+		list-style-type:none;
+		padding:0px;
+		margin:0px;
+		height:50px;
+	}
+	#downList li,#acrossList li{
+		padding:5px;
+		display:none;
+	}
+	.correct-input{
+		color:#060;
+		background:#AFA;
+		font-weight:bold;
+	}
+	.unused-input{
+		background:none;
+	}
+	input:focus{
+		background:#FFFF80;
+		border-right: 1px solid #0F0;
+		border-bottom: 1px solid #0F0;
+		-moz-box-shadow:    inset 0 0 10px #0F0;
+	   	-webkit-box-shadow: inset 0 0 10px #0F0;
+   		box-shadow:         inset 0 0 10px #0F0;
+	}
+	.muted{
+		color:#666;
+	}
+	.small{
+		font-size:.75em
+	}
