@@ -14,6 +14,7 @@
 	<li data-key="1" data-answer="UIN">Nama kampus tercinta</li>
 	<li data-key="2" data-answer="informatika">Jurusan kita (teknik _________)</li>
 	<li data-key="3" data-answer="Saintek">Singkatan fakultas kita</li>
+	<li data-key="4" data-answer="Deden">Dosen PAW (Pak ______)</li>
 </ul>
 
 <div id="listContainer">
@@ -107,6 +108,7 @@ function applyHandlers(){
 	$("#crossword-container input").fadeIn(3000);
 	$("input").on("keyup",function(e){
 		var code = e.keyCode || e.which;
+
 		var currentRow = $(this).attr("data-row");
 		var currentColumn = $(this).attr("data-column");
 		if(code == 37){ //left
